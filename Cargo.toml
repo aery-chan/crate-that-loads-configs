@@ -1,0 +1,7 @@
+[package]
+name = "crate-that-loads-configs"
+version = "0.1.0"
+authors = [ "Aery" ]
+edition = "2018"
+
+[dependencies]
