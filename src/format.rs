@@ -1,7 +1,7 @@
-pub trait Format<Read, Write, Defaults> {
+pub trait Format<Content> {
 
-    fn read(input: Vec<u8>, defaults: Defaults) -> Read;
+    fn serialize(&self, input: Vec<u8>, defaults: Content) -> Content;
 
-    fn write(input: Write) -> Vec<u8>;
+    fn deserialize(&self, input: Content) -> Vec<u8>;
 
 }
