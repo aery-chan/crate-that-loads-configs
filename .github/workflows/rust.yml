@@ -1,5 +1,5 @@
 name: Rust
-on: [ push ]
+on: [push]
 jobs:
   test:
     strategy:
