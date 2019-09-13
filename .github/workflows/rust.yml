@@ -1,26 +1,15 @@
 name: Rust
-on: [push]
+on: [ push ]
 jobs:
   test:
     strategy:
       matrix:
-        os: [ { name: Windows, os: windows-latest }, { name: Ubuntu, os: ubuntu-latest }, { name: MacOS, os: macOS-latest } ]
+        os: [ { name: Windows, os: windows-latest }, { name: Ubuntu, os: ubuntu-latest } ]
     name: Tests on ${{ matrix.os.name }}
     runs-on: ${{ matrix.os.os }}
     steps:
     - name: Use actions/checkout@v1
       uses: actions/checkout@v1
 
-    - name: Install Rust
-      if: matrix.os.os == 'macOS-latest'
-      run: curl https://sh.rustup.rs -sSf | sh -s -- -y
-
     - name: Run cargo test
-      if: matrix.os.os != 'macOS-latest'
-      run: cargo test
-
-    - name: Run cargo test (MacOS)
-      if: matrix.os.os == 'macOS-latest'
-      env:
-        PATH: $HOME/.cargo/env
       run: cargo test
