@@ -15,9 +15,12 @@ jobs:
       if: matrix.os.os == 'macOS-latest'
       run: curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-    - name: Configure Shell
-      if: matrix.os.os == 'macOS-latest'
-      run: source $HOME/.cargo/env
-
     - name: Run cargo test
+      if: matrix.os.os != 'macOS-latest'
+      run: cargo test
+
+    - name: Run cargo test (MacOS)
+      if: matrix.os.os == 'macOS-latest'
+      env:
+        PATH: $HOME/.cargo/env
       run: cargo test
