@@ -4,24 +4,20 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ { name: Ubuntu, os: ubuntu-latest }, { name: MacOS, os: macOS-latest } ]
+        os: [ { name: Windows, os: windows-latest } { name: Ubuntu, os: ubuntu-latest }, { name: MacOS, os: macOS-latest } ]
     name: Tests on ${{ matrix.os.name }}
     runs-on: ${{ matrix.os.os }}
     steps:
-    - name: Dump matrix context
-      env:
-        MATRIX_CONTEXT: ${{ toJson(matrix) }}
-      run: echo "$MATRIX_CONTEXT"
-    - name: Test Condition
+    - name: Use actions/checkout@v1
+      uses: actions/checkout@v1
+
+    - name: Install Rust
       if: matrix.os.os == 'macOS-latest'
-      run: echo "Condition met!"
-#    - name: Use actions/checkout@v1
-#      uses: actions/checkout@v1
-#    - if: matrix.name == 'MacOS'
-#      name: Install Rust
-#      run: curl https://sh.rustup.rs -sSf | sh -s -- -y
-#    - if: matrix.name == 'MacOS'
-#      name: Configure Shell
-#      run: source $HOME/.cargo/env
-#    - name: Run cargo test
-#      run: cargo test
+      run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+    - name: Configure Shell
+      if: matrix.os.os == 'macOS-latest'
+      run: source $HOME/.cargo/env
+
+    - name: Run cargo test
+      run: cargo test
