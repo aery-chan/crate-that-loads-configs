@@ -61,7 +61,12 @@ mod tests {
 
     #[test]
     fn new_config() {
-        let c: Config<StringFormat> = Config::new(Path::new("./test.txt"), Box::new(StringFormat::new()));
+        Config::new(Path::new("./test.txt"), Box::new(StringFormat::new()));
+    }
+
+    #[test]
+    fn config_read() {
+        fs::write()
     }
 
 }
