@@ -30,13 +30,25 @@ impl<'a, Content> Config<'a, Content> {
 
     pub fn read(mut self) -> Result<Self, Error> {
         let read_bytes: Vec<u8> = fs::read(self.file_path)?;
-        self.content = Some(self.format.deserialize(read_bytes, &self.defaults));
+        let defaults: Option<&Content> = match &self.defaults {
+            Some(__defaults) => Some(*&__defaults),
+            None => None
+        };
+
+        self.content = Some(self.format.deserialize(read_bytes, defaults));
+        
         Ok(self)
     }
 
     pub fn write(mut self) -> Result<Self, Error> {
-        let deserialized: Vec<u8> = self.format.serialize(&self.content);
+        let content: Option<&Content> = match &self.content {
+            Some(content) => Some(*&content),
+            None => None
+        };
+        let deserialized: Vec<u8> = self.format.serialize(content);
+
         fs::write(self.file_path, deserialized)?;
+        
         Ok(self)
     }
     
