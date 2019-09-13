@@ -4,11 +4,15 @@ jobs:
   test:
     strategy:
       matrix:
-        name: [ Windows, Ubuntu, MacOS ]
-        os: [ windows-latest, ubuntu-latest, macOS-latest ]
+        name: [ Ubuntu, MacOS ]
+        os: [ ubuntu-latest, macOS-latest ]
     name: Tests on ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Dump matrix context
+      env:
+        MATRIX_CONTEXT: ${{ toJson(matrix) }}
+      run: echo "$MATRIX_CONTEXT"
     - name: Use actions/checkout@v1
       uses: actions/checkout@v1
     - if: matrix.name == 'MacOS'
