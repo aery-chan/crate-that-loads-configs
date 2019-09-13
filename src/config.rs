@@ -7,14 +7,14 @@ use std::fs;
 
 pub struct Config<'a, Content> {
     file_path: &'a Path,
-    format: Box<dyn format::Format<Content>>,
+    format: Box<dyn format::Format<Content = Content>>,
     defaults: Option<Content>,
     content: Option<Content>
 }
 
 impl<'a, Content> Config<'a, Content> {
 
-    pub fn new(file_path: &'a Path, format: Box<dyn format::Format<Content>>) -> Self {
+    pub fn new(file_path: &'a Path, format: Box<dyn format::Format<Content = Content>>) -> Self {
         Self {
             file_path: file_path,
             format: format,
@@ -48,7 +48,7 @@ impl<'a, Content> Config<'a, Content> {
         let deserialized: Vec<u8> = self.format.serialize(content);
 
         fs::write(self.file_path, deserialized)?;
-        
+
         Ok(self)
     }
     

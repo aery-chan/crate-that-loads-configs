@@ -5,9 +5,11 @@ use format::Format;
 
 pub struct StringFormat;
 
-impl Format<String> for StringFormat {
+impl Format for StringFormat {
 
-    fn deserialize(&mut self, input: Vec<u8>, defaults: Option<&String>) -> String {
+    type Content = String;
+
+    fn deserialize(&mut self, input: Vec<u8>, defaults: Option<&Self::Content>) -> Self::Content {
         if input.len() > 0 {
             match String::from_utf8(input) {
                 Ok(__input) => __input,
@@ -21,7 +23,7 @@ impl Format<String> for StringFormat {
         }
     }
 
-    fn serialize(&mut self, input: Option<&String>) -> Vec<u8> {
+    fn serialize(&mut self, input: Option<&Self::Content>) -> Vec<u8> {
         match input {
             Some(__input) => __input.as_bytes().to_vec(),
             None => Vec::new()

@@ -1,7 +1,9 @@
-pub trait Format<Content> {
+pub trait Format {
 
-    fn deserialize(&mut self, input: Vec<u8>, defaults: Option<&Content>) -> Content;
+    type Content;
 
-    fn serialize(&mut self, input: Option<&Content>) -> Vec<u8>;
+    fn deserialize(&mut self, input: Vec<u8>, defaults: Option<&Self::Content>) -> Self::Content;
+
+    fn serialize(&mut self, input: Option<&Self::Content>) -> Vec<u8>;
 
 }
