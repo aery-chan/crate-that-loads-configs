@@ -1,12 +1,9 @@
-#[path = "../format.rs"]
-mod format;
-
-use format::Format;
+use crate::format::Format;
 
 pub struct StringFormat;
 
 impl StringFormat {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 }

@@ -1,9 +1,8 @@
-#[path = "./format.rs"]
-mod format;
-
 use std::path::Path;
 use std::io::Error;
 use std::fs;
+
+use crate::format;
 
 pub struct Config<'a, Format: format::Format> {
     file_path: &'a Path,
@@ -52,4 +51,17 @@ impl<'a, Format: format::Format> Config<'a, Format> {
         Ok(self)
     }
     
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::formats::string_format::StringFormat;
+
+    #[test]
+    fn new_config() {
+        let c: Config<StringFormat> = Config::new(Path::new("./test.txt"), Box::new(StringFormat::new()));
+    }
+
 }
