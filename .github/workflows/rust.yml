@@ -12,7 +12,10 @@ jobs:
     - name: Use actions/checkout@v1
       uses: actions/checkout@v1
     - name: Install Rust
-      if: matrix.os == 'macOS-latest'
+      if: matrix.os == ${{ 'macOS-latest' }}
       run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+    - name: Configure Shell
+      if: matrix.os == ${{ 'macOS-latest' }}
+      run: source $HOME/.cargo/env
     - name: Run cargo test
       run: cargo test
