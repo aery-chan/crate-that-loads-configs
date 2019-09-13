@@ -5,16 +5,16 @@ use std::path::Path;
 use std::io::Error;
 use std::fs;
 
-pub struct Config<'a, Content> {
+pub struct Config<'a, Format: format::Format> {
     file_path: &'a Path,
-    format: Box<dyn format::Format<Content = Content>>,
-    defaults: Option<Content>,
-    content: Option<Content>
+    format: Box<Format>,
+    defaults: Option<Format::Content>,
+    content: Option<Format::Content>
 }
 
-impl<'a, Content> Config<'a, Content> {
+impl<'a, Format: format::Format> Config<'a, Format> {
 
-    pub fn new(file_path: &'a Path, format: Box<dyn format::Format<Content = Content>>) -> Self {
+    pub fn new(file_path: &'a Path, format: Box<Format>) -> Self {
         Self {
             file_path: file_path,
             format: format,
@@ -23,14 +23,14 @@ impl<'a, Content> Config<'a, Content> {
         }
     }
 
-    pub fn def(mut self, defaults: Content) -> Self {
+    pub fn def(mut self, defaults: Format::Content) -> Self {
         self.defaults = Some(defaults);
         self
     }
 
     pub fn read(mut self) -> Result<Self, Error> {
         let read_bytes: Vec<u8> = fs::read(self.file_path)?;
-        let defaults: Option<&Content> = match &self.defaults {
+        let defaults: Option<&Format::Content> = match &self.defaults {
             Some(__defaults) => Some(*&__defaults),
             None => None
         };
@@ -41,7 +41,7 @@ impl<'a, Content> Config<'a, Content> {
     }
 
     pub fn write(mut self) -> Result<Self, Error> {
-        let content: Option<&Content> = match &self.content {
+        let content: Option<&Format::Content> = match &self.content {
             Some(content) => Some(*&content),
             None => None
         };
