@@ -11,10 +11,10 @@ jobs:
     - name: Dump matrix context
       env:
         MATRIX_CONTEXT: ${{ toJson(matrix) }}
+      run: echo "$MATRIX_CONTEXT"
     - name: Test Condition
       if: matrix.os.os == 'macOS-latest'
       run: echo "Condition met!"
-#      run: echo "$MATRIX_CONTEXT"
 #    - name: Use actions/checkout@v1
 #      uses: actions/checkout@v1
 #    - if: matrix.name == 'MacOS'
