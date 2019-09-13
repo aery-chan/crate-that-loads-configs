@@ -4,12 +4,15 @@ jobs:
   test:
     strategy:
       matrix:
-        name: [ Windows, Ubuntu ]
-        os: [ windows-latest, ubuntu-latest ]
+        name: [ Windows, Ubuntu, MacOS ]
+        os: [ windows-latest, ubuntu-latest, macOS-latest ]
     name: Tests on ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     steps:
     - name: Use actions/checkout@v1
       uses: actions/checkout@v1
+    - name: Install Rust
+      if: matrix.os == "macOS-latest"
+      run: curl https://sh.rustup.rs -sSf | sh
     - name: Run cargo test
       run: cargo test
