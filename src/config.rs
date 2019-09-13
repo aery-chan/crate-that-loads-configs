@@ -30,12 +30,12 @@ impl<'a, Content> Config<'a, Content> {
 
     pub fn read(mut self) -> Result<Self, Error> {
         let read_bytes: Vec<u8> = fs::read(self.file_path)?;
-        self.content = Some(self.format.serialize(read_bytes, &self.defaults));
+        self.content = Some(self.format.deserialize(read_bytes, &self.defaults));
         Ok(self)
     }
 
     pub fn write(mut self) -> Result<Self, Error> {
-        let deserialized: Vec<u8> = self.format.deserialize(&self.content);
+        let deserialized: Vec<u8> = self.format.serialize(&self.content);
         fs::write(self.file_path, deserialized)?;
         Ok(self)
     }
