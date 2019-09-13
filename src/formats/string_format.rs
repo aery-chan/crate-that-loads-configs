@@ -5,6 +5,12 @@ use format::Format;
 
 pub struct StringFormat;
 
+impl StringFormat {
+    fn new() -> Self {
+        Self {}
+    }
+}
+
 impl Format for StringFormat {
 
     type Content = String;
@@ -32,12 +38,6 @@ impl Format for StringFormat {
 
 }
 
-impl StringFormat {
-    fn new() -> Self {
-        Self {}
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
@@ -48,6 +48,13 @@ mod tests {
         let mut f: StringFormat = StringFormat::new();
         let s: String = String::from("Hello, world!");
         assert_eq!(f.deserialize(s.as_bytes().to_vec(), None), s);
+    }
+
+    #[test]
+    fn defaults() {
+        let mut f: StringFormat = StringFormat::new();
+        let d: String = String::from("Hello, world!");
+        assert_eq!(f.deserialize(vec![], Some(&d)), d);
     }
 
     #[test]
