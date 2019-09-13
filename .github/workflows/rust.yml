@@ -4,7 +4,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ { name: Windows, os: windows-latest } { name: Ubuntu, os: ubuntu-latest }, { name: MacOS, os: macOS-latest } ]
+        os: [ { name: Windows, os: windows-latest }, { name: Ubuntu, os: ubuntu-latest }, { name: MacOS, os: macOS-latest } ]
     name: Tests on ${{ matrix.os.name }}
     runs-on: ${{ matrix.os.os }}
     steps:
