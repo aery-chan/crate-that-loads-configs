@@ -22,13 +22,13 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
         }
     }
 
-    pub fn def(&mut self, defaults: Format::Defaults) -> &mut Self {
+    pub fn def(mut self, defaults: Format::Defaults) -> Self {
         self.defaults = Some(defaults);
         self
     }
 
-    pub fn read(&mut self) -> Result<&mut Self, Error> {
-        let read_bytes: Vec<u8> = if self.file_path.exists() {
+    pub fn read(mut self) -> Result<Self, Error> {
+        let bytes: Vec<u8> = if self.file_path.exists() {
             fs::read(self.file_path)?
         } else {
             vec![]
@@ -38,12 +38,12 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
             None => None
         };
 
-        self.content = Some(self.format.deserialize(read_bytes, defaults));
+        self.content = Some(self.format.deserialize(bytes, defaults));
         
         Ok(self)
     }
 
-    pub fn write(&mut self) -> Result<&mut Self, Error> {
+    pub fn write(mut self) -> Result<Self, Error> {
         let content: Option<&Format::Content> = match &self.content {
             Some(content) => Some(content),
             None => None
@@ -78,7 +78,7 @@ mod tests {
         let mut c: Config<StringFormat> = Config::new(p, StringFormat::new());
 
         f.write(&s);
-        c.read().unwrap();
+        c = c.read().unwrap();
 
         assert_eq!(c.content.unwrap().as_str(), s);
     }
@@ -101,10 +101,11 @@ mod tests {
         let p: &Path = &TestPath::new().path;
         let _f: TestFile = TestFile::new(p);
         let s: String = String::from("Hello, world!");
-        let mut c: Config<StringFormat> = Config::new(p, StringFormat::new());
 
-        c.def(s.clone());
-        c.read().unwrap();
+        let c: Config<StringFormat> = Config::new(p, StringFormat::new())
+            .def(s.clone())
+            .read()
+            .unwrap();
 
         assert_eq!(c.content.unwrap(), s);
     }
