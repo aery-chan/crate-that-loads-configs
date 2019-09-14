@@ -22,15 +22,15 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
         }
     }
 
-    pub fn def(mut self, defaults: Format::Content) -> Self {
+    pub fn def(&mut self, defaults: Format::Content) -> &mut Self {
         self.defaults = Some(defaults);
         self
     }
 
-    pub fn read(mut self) -> Result<Self, Error> {
+    pub fn read(&mut self) -> Result<&mut Self, Error> {
         let read_bytes: Vec<u8> = fs::read(self.file_path)?;
         let defaults: Option<&Format::Content> = match &self.defaults {
-            Some(__defaults) => Some(*&__defaults),
+            Some(__defaults) => Some(__defaults),
             None => None
         };
 
@@ -39,9 +39,9 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
         Ok(self)
     }
 
-    pub fn write(mut self) -> Result<Self, Error> {
+    pub fn write(&mut self) -> Result<&mut Self, Error> {
         let content: Option<&Format::Content> = match &self.content {
-            Some(content) => Some(*&content),
+            Some(content) => Some(content),
             None => None
         };
         let deserialized: Vec<u8> = self.format.serialize(content);
@@ -57,6 +57,8 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
 mod tests {
 
     use super::*;
+    use crate::test::test_path::TestPath;
+    use crate::test::test_file::TestFile;
     use crate::formats::string_format::StringFormat;
 
     #[test]
@@ -64,11 +66,30 @@ mod tests {
         Config::new(Path::new("./test.txt"), StringFormat::new());
     }
 
-    /*
     #[test]
     fn config_read() {
-        let p: &Path = Path::new("./test.txt");
-        fs::write(p, String::from("Hello, world!").as_bytes());
+        let p: &Path = &TestPath::new().path;
+        let f: TestFile = TestFile::new(p);
+        let s: String = String::from("Hello, world!");
+        let mut c: Config<StringFormat> = Config::new(p, StringFormat::new());
+
+        f.write(&s);
+        c.read().unwrap();
+
+        assert_eq!(c.content.unwrap().as_str(), s);
     }
-    */
+
+    #[test]
+    fn config_write() {
+        let p: &Path = &TestPath::new().path;
+        let f: TestFile = TestFile::new(p);
+        let s: String = String::from("Hello, world!");
+        let mut c: Config<StringFormat> = Config::new(p, StringFormat::new());
+
+        c.content = Some(s.clone());
+        c.write().unwrap();
+
+        assert_eq!(f.read(), s);
+    }
+
 }

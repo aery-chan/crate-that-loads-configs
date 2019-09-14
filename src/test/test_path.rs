@@ -87,7 +87,7 @@ mod tests {
     fn test_paths_unique() {
         let p1: &Box<Path> = &TestPath::new().path;
         let p2: &Box<Path> = &TestPath::new().path;
-        assert_ne!(p1, p2);
+        assert_ne!(**p1, **p2);
     }
 
     fn test_path_thread() -> JoinHandle<TestPath> {
@@ -100,7 +100,7 @@ mod tests {
     fn test_paths_unique_threads() {
         let p1: &Box<Path> = &test_path_thread().join().unwrap().path;
         let p2: &Box<Path> = &test_path_thread().join().unwrap().path;
-        assert_ne!(p1, p2);
+        assert_ne!(**p1, **p2);
     }
 
 }
