@@ -12,7 +12,7 @@ jobs:
       uses: actions/checkout@v1
       
     - name: Add cargo to PATH
-      if: matric.os.os == 'macOS-latest'
+      if: matrix.os.os == 'macOS-latest'
       run: export PATH=$PATH:$HOME/.cargo/bin
 
     - name: Run cargo test
