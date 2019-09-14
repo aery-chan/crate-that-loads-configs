@@ -4,7 +4,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ { name: Windows, os: windows-latest }, { name: Ubuntu, os: ubuntu-latest }, { name: MacOS, os: macOS-latest } ]
+        os: [ { name: MacOS, os: macOS-latest } ]
     name: Tests on ${{ matrix.os.name }}
     runs-on: ${{ matrix.os.os }}
     steps:
@@ -14,6 +14,10 @@ jobs:
     - name: Add cargo to PATH
       if: matrix.os.os == 'macOS-latest'
       run: export PATH=$PATH:$HOME/.cargo/bin
+    
+    - name: Run echo $PATH
+      if: matrix.os.os == 'macOS-latest'
+      run: echo $PATH
 
     - name: Run cargo test
       run: cargo test
