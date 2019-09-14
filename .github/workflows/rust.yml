@@ -10,14 +10,11 @@ jobs:
     steps:
     - name: Use actions/checkout@v1
       uses: actions/checkout@v1
-      
-    - name: Add cargo to PATH
-      if: matrix.os.os == 'macOS-latest'
-      run: export PATH=$PATH:$HOME/.cargo/bin
-    
-    - name: Run echo $PATH
-      if: matrix.os.os == 'macOS-latest'
-      run: echo $PATH
 
     - name: Run cargo test
+      if: matrix.os.os != 'macOS-latest'
       run: cargo test
+      
+    - name: Add to PATH & Run cargo test
+      if: matrix.os.os == 'macOS-latest'
+      run: export PATH=$PATH:$HOME/.cargo/bin && echo $PATH && cargo test
