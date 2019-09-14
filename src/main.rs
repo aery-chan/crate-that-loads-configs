@@ -7,6 +7,6 @@ pub mod config;
 pub mod formats;
 
 #[cfg(test)]
-pub mod test_path; 
+pub mod test; 
 
 fn main() {}

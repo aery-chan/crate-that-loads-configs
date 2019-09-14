@@ -10,24 +10,11 @@ lazy_static! {
 
 pub struct TestPath {
     id: u32,
+    dir_path: Box<Path>,
     pub path: Box<Path>
 }
 
 impl TestPath {
-
-    fn try_mkdir(dir: &&mut HashSet<u32>) {
-        let mut dir_path_buf: PathBuf = PathBuf::new();
-        let dir_path: &Path;
-
-        dir_path_buf.push(Path::new("."));
-        dir_path_buf.push(Path::new("tmp"));
-
-        dir_path = dir_path_buf.as_path();
-
-        if (**dir).is_empty() {
-            fs::create_dir(dir_path).unwrap();
-        }
-    }
 
     pub fn new() -> Self {
         let id: &mut u32 = &mut *ID.lock().unwrap();
@@ -36,16 +23,23 @@ impl TestPath {
             panic!("Maximum amount of paths reached");
         }
 
+        let mut dir_path_buf: PathBuf = PathBuf::new();
+
+        dir_path_buf.push(Path::new("."));
+        dir_path_buf.push(Path::new("tmp"));
+
         let dir: &mut HashSet<u32> = &mut *DIR.lock().unwrap(); // Set of ID:s currently using folder
+        let dir_path: &Path = dir_path_buf.as_path();
         let mut path_buf: PathBuf = PathBuf::new();
 
-        path_buf.push(Path::new("."));
-        path_buf.push(Path::new("tmp"));
+        path_buf.push(dir_path);
         path_buf.push((*id).to_string());
 
         // Create test directiory if no one else is using it.
         // i.e: It doesn't exist, since if we're the last to use it, we remove it when we're dropped
-        Self::try_mkdir(&dir);
+        if (*dir).is_empty() {
+            fs::create_dir(dir_path).unwrap();
+        }
 
         (*dir).insert(*id);
 
@@ -55,6 +49,7 @@ impl TestPath {
 
         Self {
             id: ret_id,
+            dir_path: dir_path_buf.into_boxed_path(),
             path: path_buf.into_boxed_path()
         }
     }
@@ -64,17 +59,13 @@ impl TestPath {
 impl Drop for TestPath {
 
     fn drop(&mut self) {
-        let mut dir_path_buf: PathBuf = PathBuf::new();
         let dir: &mut HashSet<u32> = &mut *DIR.lock().unwrap();
 
         (*dir).remove(&self.id);
 
-        dir_path_buf.push(Path::new("."));
-        dir_path_buf.push(Path::new("tmp"));
-
         // Remove test dir if we were the last to use it
         if (*dir).is_empty() {
-            fs::remove_dir(dir_path_buf.as_path()).unwrap()
+            fs::remove_dir(&self.dir_path).unwrap()
         }
     }
 
