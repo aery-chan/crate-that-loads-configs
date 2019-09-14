@@ -2,6 +2,7 @@ use crate::format::Format;
 
 pub struct StringFormat;
 
+#[allow(clippy::new_without_default)]
 impl StringFormat {
     pub fn new() -> Self {
         Self {}
@@ -11,9 +12,10 @@ impl StringFormat {
 impl Format for StringFormat {
 
     type Content = String;
+    type Defaults = String;
 
-    fn deserialize(&mut self, input: Vec<u8>, defaults: Option<&Self::Content>) -> Self::Content {
-        if input.len() > 0 {
+    fn deserialize(&mut self, input: Vec<u8>, defaults: Option<&Self::Defaults>) -> Self::Content {
+        if !input.is_empty() {
             match String::from_utf8(input) {
                 Ok(__input) => __input,
                 Err(err) => panic!(err)
@@ -48,7 +50,7 @@ mod tests {
     }
 
     #[test]
-    fn defaults() {
+    fn deserialize_defaults() {
         let mut f: StringFormat = StringFormat::new();
         let d: String = String::from("Hello, world!");
         assert_eq!(f.deserialize(vec![], Some(&d)), d);

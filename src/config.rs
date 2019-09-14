@@ -7,7 +7,7 @@ use crate::format;
 pub struct Config<'a, Format: format::Format + Sized> {
     file_path: &'a Path,
     format: Format,
-    defaults: Option<Format::Content>,
+    defaults: Option<Format::Defaults>,
     content: Option<Format::Content>
 }
 
@@ -15,21 +15,25 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
 
     pub fn new(file_path: &'a Path, format: Format) -> Self {
         Self {
-            file_path: file_path,
-            format: format,
+            file_path,
+            format,
             defaults: None,
             content: None
         }
     }
 
-    pub fn def(&mut self, defaults: Format::Content) -> &mut Self {
+    pub fn def(&mut self, defaults: Format::Defaults) -> &mut Self {
         self.defaults = Some(defaults);
         self
     }
 
     pub fn read(&mut self) -> Result<&mut Self, Error> {
-        let read_bytes: Vec<u8> = fs::read(self.file_path)?;
-        let defaults: Option<&Format::Content> = match &self.defaults {
+        let read_bytes: Vec<u8> = if self.file_path.exists() {
+            fs::read(self.file_path)?
+        } else {
+            vec![]
+        };
+        let defaults: Option<&Format::Defaults> = match &self.defaults {
             Some(__defaults) => Some(__defaults),
             None => None
         };
@@ -90,6 +94,19 @@ mod tests {
         c.write().unwrap();
 
         assert_eq!(f.read(), s);
+    }
+    
+    #[test]
+    fn config_defaults() {
+        let p: &Path = &TestPath::new().path;
+        let _f: TestFile = TestFile::new(p);
+        let s: String = String::from("Hello, world!");
+        let mut c: Config<StringFormat> = Config::new(p, StringFormat::new());
+
+        c.def(s.clone());
+        c.read().unwrap();
+
+        assert_eq!(c.content.unwrap(), s);
     }
 
 }

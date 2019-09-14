@@ -16,6 +16,7 @@ pub struct TestPath {
 
 impl TestPath {
 
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let id: &mut u32 = &mut *ID.lock().unwrap();
 
@@ -85,9 +86,9 @@ mod tests {
 
     #[test]
     fn test_paths_unique() {
-        let p1: &Box<Path> = &TestPath::new().path;
-        let p2: &Box<Path> = &TestPath::new().path;
-        assert_ne!(**p1, **p2);
+        let p1: &Path = &TestPath::new().path;
+        let p2: &Path = &TestPath::new().path;
+        assert_ne!(*p1, *p2);
     }
 
     fn test_path_thread() -> JoinHandle<TestPath> {
@@ -98,9 +99,9 @@ mod tests {
 
     #[test]
     fn test_paths_unique_threads() {
-        let p1: &Box<Path> = &test_path_thread().join().unwrap().path;
-        let p2: &Box<Path> = &test_path_thread().join().unwrap().path;
-        assert_ne!(**p1, **p2);
+        let p1: &Path = &test_path_thread().join().unwrap().path;
+        let p2: &Path = &test_path_thread().join().unwrap().path;
+        assert_ne!(*p1, *p2);
     }
 
 }
