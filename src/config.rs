@@ -64,9 +64,11 @@ mod tests {
         Config::new(Path::new("./test.txt"), Box::new(StringFormat::new()));
     }
 
+    /*
     #[test]
     fn config_read() {
-        fs::write()
+        let p: &Path = Path::new("./test.txt");
+        fs::write(p, String::from("Hello, world!").as_bytes());
     }
-
+    */
 }
