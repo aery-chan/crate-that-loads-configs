@@ -4,16 +4,16 @@ use std::fs;
 
 use crate::format;
 
-pub struct Config<'a, Format: format::Format> {
+pub struct Config<'a, Format: format::Format + Sized> {
     file_path: &'a Path,
-    format: Box<Format>,
+    format: Format,
     defaults: Option<Format::Content>,
     content: Option<Format::Content>
 }
 
-impl<'a, Format: format::Format> Config<'a, Format> {
+impl<'a, Format: format::Format + Sized> Config<'a, Format> {
 
-    pub fn new(file_path: &'a Path, format: Box<Format>) -> Self {
+    pub fn new(file_path: &'a Path, format: Format) -> Self {
         Self {
             file_path: file_path,
             format: format,
@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn new_config() {
-        Config::new(Path::new("./test.txt"), Box::new(StringFormat::new()));
+        Config::new(Path::new("./test.txt"), StringFormat::new());
     }
 
     /*
