@@ -13,7 +13,7 @@ jobs:
       
     - name: Add cargo to PATH
       if: matrix.os.os == 'macOS-latest'
-      run: echo $HOME"/.cargo/bin" >> /etc/paths
+      run: sudo echo $HOME"/.cargo/bin" >> /etc/paths
     
     - name: Run echo $PATH
       if: matrix.os.os == 'macOS-latest'
