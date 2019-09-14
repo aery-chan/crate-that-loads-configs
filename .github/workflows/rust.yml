@@ -11,5 +11,8 @@ jobs:
     - name: Use actions/checkout@v1
       uses: actions/checkout@v1
 
-    - name: Run cargo test
+    - name: Tests 🧪
       run: cargo test
+
+    - name: Clippy 📎
+      run: cargo clippy
