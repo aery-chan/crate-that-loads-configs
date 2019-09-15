@@ -13,7 +13,7 @@ A lil' crate that simplifies your config loading needs
 
 # Examples
 
-### Reading a Text File
+### Reading a text file
 ```rust
 let config = Config::new(Path::new("key.txt"), StringFormat::new())
     .def("xxxx-xxxx-xxxx-xxxx") // Default content to example key

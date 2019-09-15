@@ -1,4 +1,4 @@
-use crate::format::Format;
+use crate::format::{ Format, Deserialized };
 
 pub struct StringFormat;
 
@@ -14,17 +14,17 @@ impl Format for StringFormat {
     type Content = String;
     type Defaults = String;
 
-    fn deserialize(&mut self, input: Vec<u8>, defaults: Option<&Self::Defaults>) -> Self::Content {
+    fn deserialize(&mut self, input: Vec<u8>, defaults: Option<&Self::Defaults>) -> Deserialized<Self::Content> {
         if !input.is_empty() {
             match String::from_utf8(input) {
-                Ok(__input) => __input,
+                Ok(__input) => Deserialized(__input, false),
                 Err(err) => panic!(err)
             }
         } else {
-            match defaults {
+            Deserialized(match defaults {
                 Some(__defaults) => __defaults.clone(),
                 None => String::new()
-            }
+            }, true)
         }
     }
 
@@ -46,14 +46,14 @@ mod tests {
     fn deserialize_bytes_to_string() {
         let mut f: StringFormat = StringFormat::new();
         let s: String = String::from("Hello, world!");
-        assert_eq!(f.deserialize(s.as_bytes().to_vec(), None), s);
+        assert_eq!(f.deserialize(s.as_bytes().to_vec(), None).0, s);
     }
 
     #[test]
     fn deserialize_defaults() {
         let mut f: StringFormat = StringFormat::new();
-        let d: String = String::from("Hello, world!");
-        assert_eq!(f.deserialize(vec![], Some(&d)), d);
+        let s: String = String::from("Hello, world!");
+        assert_eq!(f.deserialize(vec![], Some(&s)).0, s);
     }
 
     #[test]

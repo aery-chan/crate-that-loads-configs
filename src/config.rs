@@ -3,12 +3,26 @@ use std::io::Error;
 use std::fs;
 
 use crate::format;
-use crate::config_opts::ConfigOpts;
+
+pub struct ConfigOpts {
+    write_if_defaulted: bool
+}
+
+impl Default for ConfigOpts {
+
+    fn default() -> Self {
+        Self {
+            write_if_defaulted: false
+        }
+    }
+    
+}
 
 pub struct Config<'a, Format: format::Format + Sized> {
     pub path: &'a Path,
     pub options: ConfigOpts,
     pub content: Option<Format::Content>,
+    pub defaulted: bool,
 
     format: Format,
     defaults: Option<Format::Defaults>
@@ -21,6 +35,7 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
             path,
             options: ConfigOpts::default(),
             content: None,
+            defaulted: false,
 
             format,
             defaults: None
@@ -47,8 +62,10 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
             Some(__defaults) => Some(__defaults),
             None => None
         };
+        let deserialized: format::Deserialized<Format::Content> = self.format.deserialize(bytes, defaults);
 
-        self.content = Some(self.format.deserialize(bytes, defaults));
+        self.content = Some(deserialized.0);
+        self.defaulted = deserialized.1;
         
         Ok(self)
     }
@@ -101,7 +118,7 @@ mod tests {
         let mut c: Config<StringFormat> = Config::new(p, StringFormat::new());
 
         c.content = Some(s.clone());
-        c.write().unwrap();
+        c = c.write().unwrap();
 
         assert_eq!(f.read(), s);
     }
@@ -109,7 +126,6 @@ mod tests {
     #[test]
     fn config_defaults() {
         let p: &Path = &TestPath::new().path;
-        let _f: TestFile = TestFile::new(p);
         let s: String = String::from("Hello, world!");
 
         let c: Config<StringFormat> = Config::new(p, StringFormat::new())
@@ -118,6 +134,31 @@ mod tests {
             .unwrap();
 
         assert_eq!(c.content.unwrap(), s);
+    }
+
+    #[test]
+    fn config_defaulted() {
+        let p: &Path = &TestPath::new().path;
+        let c: Config<StringFormat> = Config::new(p, StringFormat::new())
+            .def(String::from("Hello, world!"))
+            .read()
+            .unwrap();
+        
+        assert_eq!(c.defaulted, true);
+    }
+
+    #[test]
+    fn config_not_defaulted() {
+        let p: &Path = &TestPath::new().path;
+        let f: TestFile = TestFile::new(p);
+        let s: String = String::from("Hello, world!");
+        let mut c: Config<StringFormat> = Config::new(p, StringFormat::new())
+            .def(s.clone());
+
+        f.write(&s);
+        c = c.read().unwrap();
+
+        assert_eq!(c.defaulted, false);
     }
 
 }
