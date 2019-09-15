@@ -14,12 +14,12 @@ A lil' crate that simplifies your config loading needs
 # Examples
 
 ### Reading a Text File
-```rs
+```rust
 let config = Config::new(Path::new("key.txt"), StringFormat::new())
     .def("xxxx-xxxx-xxxx-xxxx") // Default content to example key
                                 // if when reading, file is empty or doesnt't exist
     .opt(ConfigOpts {
-        write_if_defaulted: true // Write file if content was ever defaulted
+        write_if_defaulted: true // Write file if content is ever defaulted
     })
     .read()
     .unwrap();
