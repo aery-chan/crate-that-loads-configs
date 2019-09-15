@@ -5,14 +5,20 @@ jobs:
     strategy:
       matrix:
         os: [ { name: Windows, os: windows-latest }, { name: Ubuntu, os: ubuntu-latest } ]
-    name: Tests on ${{ matrix.os.name }}
+    name: Tests on ${{ matrix.os.name }} 🧪
     runs-on: ${{ matrix.os.os }}
     steps:
     - name: Use actions/checkout@v1
       uses: actions/checkout@v1
 
-    - name: Tests 🧪
+    - name: Tests
       run: cargo test
+  clippy:
+    name: Clippy 📎
+    runs-on: ubuntu-latest
+    steps:
+    - name: Use actions/checkout@v1
+      uses: actions/checkout@v1
 
-    - name: Clippy 📎
+    - name: Clippy 
       run: cargo clippy

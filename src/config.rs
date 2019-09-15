@@ -3,22 +3,27 @@ use std::io::Error;
 use std::fs;
 
 use crate::format;
+use crate::config_opts::ConfigOpts;
 
 pub struct Config<'a, Format: format::Format + Sized> {
-    file_path: &'a Path,
+    pub path: &'a Path,
+    pub options: ConfigOpts,
+    pub content: Option<Format::Content>,
+
     format: Format,
-    defaults: Option<Format::Defaults>,
-    content: Option<Format::Content>
+    defaults: Option<Format::Defaults>
 }
 
 impl<'a, Format: format::Format + Sized> Config<'a, Format> {
 
-    pub fn new(file_path: &'a Path, format: Format) -> Self {
+    pub fn new(path: &'a Path, format: Format) -> Self {
         Self {
-            file_path,
+            path,
+            options: ConfigOpts::default(),
+            content: None,
+
             format,
-            defaults: None,
-            content: None
+            defaults: None
         }
     }
 
@@ -27,9 +32,14 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
         self
     }
 
+    pub fn opt(mut self, options: ConfigOpts) -> Self {
+        self.options = options;
+        self
+    }
+
     pub fn read(mut self) -> Result<Self, Error> {
-        let bytes: Vec<u8> = if self.file_path.exists() {
-            fs::read(self.file_path)?
+        let bytes: Vec<u8> = if self.path.exists() {
+            fs::read(self.path)?
         } else {
             vec![]
         };
@@ -50,7 +60,7 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
         };
         let deserialized: Vec<u8> = self.format.serialize(content);
 
-        fs::write(self.file_path, deserialized)?;
+        fs::write(self.path, deserialized)?;
 
         Ok(self)
     }
