@@ -56,7 +56,7 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
         let bytes: Vec<u8> = if self.path.exists() {
             fs::read(self.path)?
         } else {
-            vec![]
+            Vec::new()
         };
         let defaults: Option<&Format::Defaults> = match &self.defaults {
             Some(__defaults) => Some(__defaults),
@@ -66,6 +66,10 @@ impl<'a, Format: format::Format + Sized> Config<'a, Format> {
 
         self.content = Some(deserialized.0);
         self.defaulted = deserialized.1;
+
+        if self.defaulted && self.options.write_if_defaulted {
+            self = self.write()?;
+        }
         
         Ok(self)
     }
@@ -98,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn config_read() {
+    fn read() {
         let p: &Path = &TestPath::new().path;
         let f: TestFile = TestFile::new(p);
         let s: String = String::from("Hello, world!");
@@ -111,20 +115,20 @@ mod tests {
     }
 
     #[test]
-    fn config_write() {
+    fn write() {
         let p: &Path = &TestPath::new().path;
         let f: TestFile = TestFile::new(p);
         let s: String = String::from("Hello, world!");
         let mut c: Config<StringFormat> = Config::new(p, StringFormat::new());
 
         c.content = Some(s.clone());
-        c = c.write().unwrap();
+        c.write().unwrap();
 
         assert_eq!(f.read(), s);
     }
     
     #[test]
-    fn config_defaults() {
+    fn defaults() {
         let p: &Path = &TestPath::new().path;
         let s: String = String::from("Hello, world!");
 
@@ -137,7 +141,7 @@ mod tests {
     }
 
     #[test]
-    fn config_defaulted() {
+    fn defaulted() {
         let p: &Path = &TestPath::new().path;
         let c: Config<StringFormat> = Config::new(p, StringFormat::new())
             .def(String::from("Hello, world!"))
@@ -148,7 +152,7 @@ mod tests {
     }
 
     #[test]
-    fn config_not_defaulted() {
+    fn not_defaulted() {
         let p: &Path = &TestPath::new().path;
         let f: TestFile = TestFile::new(p);
         let s: String = String::from("Hello, world!");
@@ -159,6 +163,12 @@ mod tests {
         c = c.read().unwrap();
 
         assert_eq!(c.defaulted, false);
+    }
+
+    #[test]
+    fn write_if_defaulted() {
+        let p: &Path = &TestPath::new().path;
+        
     }
 
 }

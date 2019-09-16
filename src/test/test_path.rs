@@ -91,7 +91,7 @@ mod tests {
         assert_ne!(*p1, *p2);
     }
 
-    fn test_path_thread() -> JoinHandle<TestPath> {
+    fn thread_test_path() -> JoinHandle<TestPath> {
         thread::spawn(|| {
             TestPath::new()
         })
@@ -99,8 +99,8 @@ mod tests {
 
     #[test]
     fn test_paths_unique_threads() {
-        let p1: &Path = &test_path_thread().join().unwrap().path;
-        let p2: &Path = &test_path_thread().join().unwrap().path;
+        let p1: &Path = &thread_test_path().join().unwrap().path;
+        let p2: &Path = &thread_test_path().join().unwrap().path;
         assert_ne!(*p1, *p2);
     }
 
