@@ -2,7 +2,7 @@ use std::path::Path;
 use std::fs;
 
 pub struct TestFile<'a> {
-    path: &'a Path
+    pub path: &'a Path
 }
 
 impl<'a> TestFile<'a> {

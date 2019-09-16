@@ -168,7 +168,18 @@ mod tests {
     #[test]
     fn write_if_defaulted() {
         let p: &Path = &TestPath::new().path;
+        let f: TestFile = TestFile::new(p);
+        let s: String = String::from("Hello, world!");
         
+        Config::new(p, StringFormat::new())
+            .def(s.clone())
+            .opt(ConfigOpts {
+                write_if_defaulted: true
+            })
+            .read()
+            .unwrap();
+
+        assert_eq!(f.read(), s);
     }
 
 }
