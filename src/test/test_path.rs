@@ -38,11 +38,11 @@ impl TestPath {
 
         // Create test directiory if no one else is using it.
         // i.e: It doesn't exist, since if we're the last to use it, we remove it when we're dropped
-        if (*dir).is_empty() {
+        if dir.is_empty() {
             fs::create_dir(dir_path).unwrap();
         }
 
-        (*dir).insert(*id);
+        dir.insert(*id);
 
         let ret_id: u32 = *id;
 
@@ -88,7 +88,7 @@ mod tests {
     fn test_paths_unique() {
         let p1: &Path = &TestPath::new().path;
         let p2: &Path = &TestPath::new().path;
-        assert_ne!(*p1, *p2);
+        assert_ne!(p1, p2);
     }
 
     fn thread_test_path() -> JoinHandle<TestPath> {
@@ -101,7 +101,7 @@ mod tests {
     fn test_paths_unique_threads() {
         let p1: &Path = &thread_test_path().join().unwrap().path;
         let p2: &Path = &thread_test_path().join().unwrap().path;
-        assert_ne!(*p1, *p2);
+        assert_ne!(p1, p2);
     }
 
 }

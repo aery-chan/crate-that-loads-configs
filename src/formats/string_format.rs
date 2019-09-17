@@ -4,9 +4,11 @@ pub struct StringFormat;
 
 #[allow(clippy::new_without_default)]
 impl StringFormat {
+
     pub fn new() -> Self {
         Self {}
     }
+    
 }
 
 impl Format for StringFormat {

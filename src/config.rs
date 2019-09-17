@@ -170,7 +170,7 @@ mod tests {
         let p: &Path = &TestPath::new().path;
         let f: TestFile = TestFile::new(p);
         let s: String = String::from("Hello, world!");
-        
+
         Config::new(p, StringFormat::new())
             .def(s.clone())
             .opt(ConfigOpts {
