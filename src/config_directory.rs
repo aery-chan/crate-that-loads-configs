@@ -38,8 +38,20 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         (*path.file_name().unwrap()).to_os_string().into_string().unwrap()
     }
 
+    pub fn file(mut self, mut config_file: ConfigFile<Format>) -> Self {
+        config_file.path = self.dir_path(&config_file.path);
+        self.configs.insert(self.config_name(&config_file.path), Config::File(config_file));
+        self
+    }
+
+    pub fn dir(mut self, mut config_dir: ConfigDirectory<Format>) -> Self {
+        config_dir.path = self.dir_path(&config_dir.path);
+        self.configs.insert(self.config_name(&config_dir.path), Config::Directory(config_dir));
+        self
+    }
+
     #[allow(clippy::ptr_arg)]
-    fn has_config(&mut self, file_name: &String) -> Option<Config<Format>> {
+    fn has_config(&mut self, file_name: &String) -> Option<String> {
         let path: &Path = Path::new(file_name);
         let mut found_key: Option<String> = None;
 
@@ -64,25 +76,7 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
             }
         }
 
-        match found_key {
-            Some(key) => {
-                self.configs.remove(&key)
-            },
-            None => None
-        }
-    }
-
-    pub fn file(mut self, mut config_file: ConfigFile<Format>) -> Self {
-        config_file.path = self.dir_path(&config_file.path);
-        // TODO: Copy old file name instead of calling self.config_name
-        self.configs.insert(self.config_name(&config_file.path), Config::File(config_file));
-        self
-    }
-
-    pub fn dir(mut self, mut config_dir: ConfigDirectory<Format>) -> Self {
-        config_dir.path = self.dir_path(&config_dir.path);
-        self.configs.insert(self.config_name(&config_dir.path), Config::Directory(config_dir));
-        self
+        found_key
     }
 
     pub fn read(mut self) -> Result<Self, Error> {
@@ -91,8 +85,8 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
             let config_name: String = entry.file_name().into_string().unwrap();
 
             match self.has_config(&(&entry).file_name().into_string().unwrap()) {
-                Some(config) => {
-                    match config {
+                Some(key) => {
+                    match self.configs.remove(&key).unwrap() {
                         Config::File(config_file) => {
                             self.configs.insert(config_name, Config::File(config_file.read()?));
                         },
@@ -121,6 +115,46 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
             }
         }
         
+        Ok(self)
+    }
+
+    fn children(&self) -> Vec<String> {
+        let mut children: Vec<String> = vec![];
+
+        for ( key, config ) in self.configs.iter() {
+            let config_path: &Path;
+
+            match config {
+                Config::File(config_file) => {
+                    config_path = &config_file.path;
+                },
+                Config::Directory(config_dir) => {
+                    config_path = &config_dir.path;
+                }
+            }
+
+            if config_path.parent().unwrap() == &*self.path {
+                children.push(key.clone());
+            }
+        }
+
+        children
+    }
+
+    pub fn write(mut self) -> Result<Self, Error> {
+        for key in self.children() {
+            let config: Config<Format> = self.configs.remove(&key).unwrap();
+
+            match config {
+                Config::File(config_file) => {
+                    self.configs.insert(key, Config::File(config_file.write()?));
+                },
+                Config::Directory(config_dir) => {
+                    self.configs.insert(key, Config::Directory(config_dir.write()?));
+                }
+            }
+        }
+
         Ok(self)
     }
 
