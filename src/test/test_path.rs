@@ -34,7 +34,7 @@ impl TestPath {
         let mut path_buf: PathBuf = PathBuf::new();
 
         path_buf.push(dir_path);
-        path_buf.push((*id).to_string());
+        path_buf.push(id.to_string());
 
         // Create test directiory if no one else is using it.
         // i.e: It doesn't exist, since if we're the last to use it, we remove it when we're dropped
@@ -62,10 +62,10 @@ impl Drop for TestPath {
     fn drop(&mut self) {
         let dir: &mut HashSet<u32> = &mut *DIR.lock().unwrap();
 
-        (*dir).remove(&self.id);
+        dir.remove(&self.id);
 
         // Remove test dir if we were the last to use it
-        if (*dir).is_empty() {
+        if dir.is_empty() {
             fs::remove_dir(&self.dir_path).unwrap()
         }
     }
