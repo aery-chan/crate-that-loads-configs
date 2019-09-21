@@ -18,7 +18,7 @@ impl Default for ConfigFileOpts {
     
 }
 
-pub struct ConfigFile<Format: format::Format + Sized> {
+pub struct ConfigFile<Format: format::Format + Sized + Clone> {
     pub path: Box<Path>,
     pub options: ConfigFileOpts,
     pub content: Option<Format::Content>,
@@ -28,7 +28,7 @@ pub struct ConfigFile<Format: format::Format + Sized> {
     defaults: Option<Format::Defaults>
 }
 
-impl<Format: format::Format + Sized> ConfigFile<Format> {
+impl<Format: format::Format + Sized + Clone> ConfigFile<Format> {
 
     pub fn new(path: &Path, format: Format) -> Self {
         ConfigFile {

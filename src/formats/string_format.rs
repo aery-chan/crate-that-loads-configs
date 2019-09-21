@@ -1,5 +1,6 @@
 use crate::format::{ Format, Deserialized };
 
+#[derive(Clone)]
 pub struct StringFormat;
 
 #[allow(clippy::new_without_default)]
