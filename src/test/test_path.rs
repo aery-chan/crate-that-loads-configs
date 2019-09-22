@@ -37,7 +37,7 @@ impl TestPath {
         path_buf.push(id.to_string());
 
         // Create test directiory if no one else is using it.
-        // i.e: It doesn't exist, since if we're the last to use it, we remove it when we're dropped
+        // Since if we're the last to use it, we remove it when we're dropped
         if dir.is_empty() {
             fs::create_dir(dir_path).unwrap();
         }
@@ -64,7 +64,7 @@ impl Drop for TestPath {
 
         dir.remove(&self.id);
 
-        // Remove test dir if we were the last to use it
+        // Remove the test directiory if we were the last to use it
         if dir.is_empty() {
             fs::remove_dir(&self.dir_path).unwrap()
         }
