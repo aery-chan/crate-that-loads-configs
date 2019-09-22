@@ -7,11 +7,30 @@ use crate::format;
 use crate::config_file::ConfigFile;
 use crate::config::Config;
 
+pub struct ConfigDirOpts {
+    pub write_if_defaulted: bool,
+    pub read_new: bool,
+    pub recursive: bool
+}
+
+impl Default for ConfigDirOpts {
+
+    fn default() -> Self {
+        Self {
+            write_if_defaulted: false,
+            read_new: false,
+            recursive: false
+        }
+    }
+
+}
+
 pub struct ConfigDirectory<Format: format::Format + Sized + Clone> {
     pub path: Box<Path>,
     pub configs: HashMap<String, Config<Format>>,
 
-    format: Format
+    format: Format,
+    options: ConfigDirOpts
 }
 
 impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
@@ -21,7 +40,8 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
             path: path.to_path_buf().into_boxed_path(),
             configs: HashMap::new(),
 
-            format
+            format,
+            options: ConfigDirOpts::default()
         }
     }
 
@@ -79,6 +99,53 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         found_key
     }
 
+    fn children(&self) -> Vec<String> {
+        let mut children: Vec<String> = vec![];
+
+        for ( key, config ) in self.configs.iter() {
+            let config_path: &Path;
+
+            match config {
+                Config::File(config_file) => {
+                    config_path = &config_file.path;
+                },
+                Config::Directory(config_dir) => {
+                    config_path = &config_dir.path;
+                }
+            }
+
+            if config_path.parent().unwrap() == &*self.path {
+                children.push(key.clone());
+            }
+        }
+
+        children
+    }
+
+    /* TODO
+    if read_new and self.path.exists {
+        for file in fs:read(self.path) {
+            if not file exits in self.configs {
+                add file to self.configs
+            }
+        }
+    }
+
+    let defaulted
+
+    for config in self.configs {
+        if config path is in self.path {
+            if config is file
+            or config is directory and recursive {
+                config.read()
+
+                if config.defaulted {
+                    defaulted = true
+                }
+            }
+        }
+    }
+    */
     pub fn read(mut self) -> Result<Self, Error> {
         for entry in fs::read_dir(&self.path)? {
             let entry: fs::DirEntry = entry?;
@@ -118,44 +185,74 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         Ok(self)
     }
 
-    fn children(&self) -> Vec<String> {
-        let mut children: Vec<String> = vec![];
-
-        for ( key, config ) in self.configs.iter() {
-            let config_path: &Path;
-
-            match config {
-                Config::File(config_file) => {
-                    config_path = &config_file.path;
-                },
-                Config::Directory(config_dir) => {
-                    config_path = &config_dir.path;
-                }
-            }
-
-            if config_path.parent().unwrap() == &*self.path {
-                children.push(key.clone());
-            }
+    /// Ensures that directory exists in fs
+    fn ensure(&self) -> Result<(), Error> {
+        if !self.path.is_dir() {
+            fs::create_dir(&self.path)?;
         }
-
-        children
+        Ok(())
     }
 
     pub fn write(mut self) -> Result<Self, Error> {
-        for key in self.children() {
-            let config: Config<Format> = self.configs.remove(&key).unwrap();
+        self.ensure()?;
 
-            match config {
-                Config::File(config_file) => {
-                    self.configs.insert(key, Config::File(config_file.write()?));
-                },
-                Config::Directory(config_dir) => {
-                    self.configs.insert(key, Config::Directory(config_dir.write()?));
+        for key in self.children() {
+            // If config is a directory and recursive isn't enabled, we shouldn't write the directory.
+            // Here we figure out if we should write the config
+            let config: &Config<Format> = self.configs.get(&key).unwrap();
+            let should_write: bool = if let Config::Directory(config_dir) = config {
+                if self.options.recursive {
+                    true
+                } else {
+                    config_dir.ensure()?;
+                //  ^^^^^^^^^^^^^^^^^^^^^ If we're not going to write directory contents,
+                //                        we still want to make sure the directory exists
+                    false
+                }
+            } else {
+                true
+            };
+
+            // Since we're going to be retrieving ownership of the config bellow,
+            // we want to be sure we're even supposed to be using it
+            if should_write {
+                let config: Config<Format> = self.configs.remove(&key).unwrap();
+            //                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            //  Since the write functions bellow require ownership we need to retrieve ownership here
+
+                match config {
+                    Config::File(config_file) => {
+                        self.configs.insert(key, Config::File(config_file.write()?));
+                    },
+                    Config::Directory(config_dir) => {
+                        self.configs.insert(key, Config::Directory(config_dir.write()?));
+                    }
                 }
             }
         }
 
         Ok(self)
+    }
+
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::test::test_path::TestPath;
+    use crate::config_file::ConfigFile;
+    use crate::formats::string_format::StringFormat;
+
+    #[test]
+    fn new_directory() {
+        ConfigDirectory::new(Path::new("test"), StringFormat::new());
+    }
+
+    #[test]
+    fn insert_file() {
+        ConfigDirectory::new(Path::new("test"), StringFormat::new())
+            .file(ConfigFile::new(Path::new("test.txt"), StringFormat::new()));
     }
 
 }

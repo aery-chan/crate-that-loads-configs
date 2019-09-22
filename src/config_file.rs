@@ -5,7 +5,7 @@ use std::fs;
 use crate::format;
 
 pub struct ConfigFileOpts {
-    write_if_defaulted: bool
+    pub write_if_defaulted: bool
 }
 
 impl Default for ConfigFileOpts {
@@ -20,11 +20,11 @@ impl Default for ConfigFileOpts {
 
 pub struct ConfigFile<Format: format::Format + Sized + Clone> {
     pub path: Box<Path>,
-    pub options: ConfigFileOpts,
     pub content: Option<Format::Content>,
     pub defaulted: bool,
 
     format: Format,
+    options: ConfigFileOpts,
     defaults: Option<Format::Defaults>
 }
 
@@ -53,7 +53,7 @@ impl<Format: format::Format + Sized + Clone> ConfigFile<Format> {
     }
 
     pub fn read(mut self) -> Result<Self, Error> {
-        let bytes: Vec<u8> = if self.path.exists() {
+        let bytes: Vec<u8> = if self.path.is_file() {
             fs::read(&self.path)?
         } else {
             Vec::new()
