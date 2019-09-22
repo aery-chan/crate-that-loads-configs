@@ -197,7 +197,7 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         self.ensure()?;
 
         for key in self.children() {
-            // If config is a directory and recursive isn't enabled, we shouldn't write the directory.
+            // If config is a directory and recursive isn't enabled, we shouldn't write the directory contents.
             // Here we figure out if we should write the config
             let config: &Config<Format> = self.configs.get(&key).unwrap();
             let should_write: bool = if let Config::Directory(config_dir) = config {

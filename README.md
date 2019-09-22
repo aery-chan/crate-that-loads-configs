@@ -16,10 +16,10 @@ A lil' crate that simplifies your config loading needs
 ### Reading a text file
 ```rust
 let config = Config::new(Path::new("key.txt"), StringFormat::new())
-    .def("xxxx-xxxx-xxxx-xxxx") // Default the content to this, if when reading,...
-                                // ...the file is empty or doesn't exist
+    .def("xxxx-xxxx-xxxx-xxxx") // Default the content to this, if when reading,
+                                // the file is empty or doesn't exist
     .opt(ConfigOpts {
-        write_if_defaulted: true // Write config if content is ever defaulted
+        write_if_defaulted: true // Write file if content is ever defaulted
     })
     .read()
     .unwrap();
