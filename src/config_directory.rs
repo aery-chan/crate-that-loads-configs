@@ -28,6 +28,7 @@ impl Default for ConfigDirOpts {
 pub struct ConfigDirectory<Format: format::Format + Sized + Clone> {
     pub path: Box<Path>,
     pub configs: HashMap<String, Config<Format>>,
+    pub defaulted: bool,
 
     format: Format,
     options: ConfigDirOpts
@@ -39,6 +40,7 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         Self {
             path: path.to_path_buf().into_boxed_path(),
             configs: HashMap::new(),
+            defaulted: false,
 
             format,
             options: ConfigDirOpts::default()
@@ -71,32 +73,25 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
     }
 
     #[allow(clippy::ptr_arg)]
-    fn has_config(&mut self, file_name: &String) -> Option<String> {
-        let path: &Path = Path::new(file_name);
-        let mut found_key: Option<String> = None;
-
-        for ( key, config ) in self.configs.iter() {
+    fn has_config(&self, path: &Path) -> bool {
+        for config in self.configs.values() {
             let config_path: &Path;
-            let dir_path: Box<Path>;
 
             match config {
                 Config::File(config_file) => {
                     config_path = &config_file.path;
-                    dir_path = self.dir_path(path);
                 },
                 Config::Directory(config_dir) => {
                     config_path = &config_dir.path;
-                    dir_path = self.dir_path(path);
                 }
             }
 
-            if config_path == &*dir_path {
-                found_key = Some(key.clone());
-                break;
+            if config_path == &*path {
+                return true;
             }
         }
 
-        found_key
+        false
     }
 
     /// Ensures that directory exists in fs
@@ -130,63 +125,65 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         children
     }
 
-    /* TODO
-    if read_new and self.path.exists {
-        for file in fs:read(self.path) {
-            if not file exits in self.configs {
-                add file to self.configs
-            }
-        }
-    }
-
-    let defaulted
-
-    for config in self.configs {
-        if config path is in self.path {
-            if config is file
-            or config is directory and recursive {
-                config.read()
-
-                if config.defaulted {
-                    defaulted = true
-                }
-            }
-        }
-    }
-    */
     pub fn read(mut self) -> Result<Self, Error> {
-        for entry in fs::read_dir(&self.path)? {
-            let entry: fs::DirEntry = entry?;
-            let config_name: String = entry.file_name().into_string().unwrap();
+        // We should only read new configs if read_new is enabled.
+        // If we're supposed to read new configs, we just insert any new configs found in our directory
+        // to be read in the next step bellow
+        if self.options.read_new && self.path.is_dir() {
+            for entry in fs::read_dir(&self.path)? {
+                let entry: fs::DirEntry = entry?;
+                let config_name: String = entry.file_name().into_string().unwrap();
+                let config_path: Box<Path> = self.dir_path(Path::new(&config_name));
 
-            match self.has_config(&(&entry).file_name().into_string().unwrap()) {
-                Some(key) => {
-                    match self.configs.remove(&key).unwrap() {
-                        Config::File(config_file) => {
-                            self.configs.insert(config_name, Config::File(config_file.read()?));
-                        },
-                        Config::Directory(config_dir) => {
-                            self.configs.insert(config_name, Config::Directory(config_dir.read()?));
-                        }
-                    }
-                },
-                None => {
-                    let file_type: fs::FileType = (&entry).file_type().unwrap();
+                if !self.has_config(&config_path) {
+                    let file_type: fs::FileType = entry.file_type()?;
 
                     if file_type.is_file() {
-                        let config_file: ConfigFile<Format> =
-                            ConfigFile::new(&self.dir_path(Path::new(&config_name)), self.format.clone())
-                                .read()
-                                .unwrap();
-                        self.configs.insert(config_name, Config::File(config_file));
+                        self.configs.insert(config_name, Config::File(ConfigFile::new(&config_path, self.format.clone())));
                     } else if file_type.is_dir() {
-                        let config_dir: ConfigDirectory<Format> =
-                            ConfigDirectory::new(&self.dir_path(Path::new(&config_name)), self.format.clone())
-                                .read()
-                                .unwrap();
-                        self.configs.insert(config_name, Config::Directory(config_dir));
+                        self.configs.insert(config_name, Config::Directory(ConfigDirectory::new(&config_path, self.format.clone())));
                     }
                 }
+            }
+        }
+
+        for key in self.children() {
+            // We should only read directory contents if recursive is enabled.
+            // Since the read functions require that we retrieve ownership,
+            // we want to be sure beforehand if we're supposed to read the config,
+            // which we figure out here
+            let config: &Config<Format> = self.configs.get(&key).unwrap();
+            let should_read: bool = if let Config::Directory(_) = config {
+                self.options.recursive
+            } else {
+                true
+            };
+
+            if should_read {
+                let config: Config<Format> = self.configs.remove(&key).unwrap();
+            //                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            //                               Here we retrieve ownership for the read functions
+                let reinsert_config: Config<Format>;
+                let defaulted: bool;
+
+                match config {
+                    Config::File(mut config_file) => {
+                        config_file = config_file.read()?;
+                        defaulted = config_file.defaulted;
+                        reinsert_config = Config::File(config_file);
+                    },
+                    Config::Directory(mut config_dir) => {
+                        config_dir = config_dir.read()?;
+                        defaulted = config_dir.defaulted;
+                        reinsert_config = Config::Directory(config_dir);
+                    }
+                }
+
+                if defaulted {
+                    self.defaulted = true;
+                }
+
+                self.configs.insert(key, reinsert_config);
             }
         }
         
@@ -195,10 +192,15 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
 
     pub fn write(mut self) -> Result<Self, Error> {
         self.ensure()?;
+    //  ^^^^^^^^^^^^^^^ Calling write on a ConfigFile already ensures the directory exists.
+    //                  However, if we call write on an empty ConfigDirectory,
+    //                  we still want the directory to made
 
         for key in self.children() {
-            // If config is a directory and recursive isn't enabled, we shouldn't write the directory contents.
-            // Here we figure out if we should write the config
+            // We should only write directory contents if recursive is enabled.
+            // Since the write functions require that we retrieve ownership,
+            // we want to be sure beforehand if we're supposed to write the config,
+            // which we figure out here
             let config: &Config<Format> = self.configs.get(&key).unwrap();
             let should_write: bool = if let Config::Directory(config_dir) = config {
                 if self.options.recursive {
@@ -206,19 +208,17 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
                 } else {
                     config_dir.ensure()?;
                 //  ^^^^^^^^^^^^^^^^^^^^^ If we're not going to write directory contents,
-                //                        we still want to make sure the directory exists
+                //                        we still want the directory to be made
                     false
                 }
             } else {
                 true
             };
 
-            // Since we're going to be retrieving ownership of the config bellow,
-            // we want to be sure we're even supposed to be using it
             if should_write {
                 let config: Config<Format> = self.configs.remove(&key).unwrap();
             //                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            //  Since the write functions bellow require ownership we need to retrieve ownership here
+            //                               Here we retrieve ownership for the write functions
 
                 match config {
                     Config::File(config_file) => {
