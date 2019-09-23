@@ -99,6 +99,14 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         found_key
     }
 
+    /// Ensures that directory exists in fs
+    fn ensure(&self) -> Result<(), Error> {
+        if !self.path.is_dir() {
+            fs::create_dir(&self.path)?;
+        }
+        Ok(())
+    }
+
     fn children(&self) -> Vec<String> {
         let mut children: Vec<String> = vec![];
 
@@ -183,14 +191,6 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         }
         
         Ok(self)
-    }
-
-    /// Ensures that directory exists in fs
-    fn ensure(&self) -> Result<(), Error> {
-        if !self.path.is_dir() {
-            fs::create_dir(&self.path)?;
-        }
-        Ok(())
     }
 
     pub fn write(mut self) -> Result<Self, Error> {
