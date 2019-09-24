@@ -23,13 +23,3 @@ impl TestFile {
     }
 
 }
-
-impl Drop for TestFile {
-
-    fn drop(&mut self) {
-        if self.path.exists() {
-            fs::remove_file(&self.path).unwrap();
-        }
-    }
-
-}

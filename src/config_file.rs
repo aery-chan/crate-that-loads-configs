@@ -3,6 +3,7 @@ use std::io::Error;
 use std::fs;
 
 use crate::format;
+use crate::config;
 
 pub struct ConfigFileOpts {
     pub write_if_defaulted: bool
@@ -75,6 +76,12 @@ impl<Format: format::Format + Sized + Clone> ConfigFile<Format> {
     }
 
     pub fn write(mut self) -> Result<Self, Error> {
+        let parent: Option<&Path> = self.path.parent();
+
+        if let Some(parent_path) = parent {
+            config::ensure(parent_path)?;
+        }
+
         let content: Option<&Format::Content> = match &self.content {
             Some(content) => Some(content),
             None => None
@@ -94,6 +101,7 @@ mod tests {
     use super::*;
     use crate::test::test_path::TestPath;
     use crate::test::test_file::TestFile;
+    use crate::test::child_path::ChildPath;
     use crate::formats::string_format::StringFormat;
 
     #[test]
@@ -180,6 +188,19 @@ mod tests {
             .unwrap();
 
         assert_eq!(f.read(), s);
+    }
+
+    #[test]
+    fn ensure_parent() {
+        let tp: TestPath = TestPath::new();
+        let p1: &Path = &tp.path;
+        let p2: &Path = &tp.child_path("test.txt");
+
+        ConfigFile::new(p2, StringFormat::new())
+            .write()
+            .unwrap();
+        
+        assert!(p1.is_dir());
     }
 
 }

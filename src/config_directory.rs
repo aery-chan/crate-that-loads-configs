@@ -5,7 +5,8 @@ use std::fs;
 
 use crate::format;
 use crate::config_file::ConfigFile;
-use crate::config::Config;
+use crate::config;
+use config::Config;
 
 pub struct ConfigDirOpts {
     pub write_if_defaulted: bool,
@@ -47,7 +48,7 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         }
     }
 
-    fn dir_path(&self, path: &Path) -> Box<Path> {
+    fn child_path(&self, path: &Path) -> Box<Path> {
         let mut path_buf: PathBuf = PathBuf::new();
 
         path_buf.push(&self.path);
@@ -61,13 +62,13 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
     }
 
     pub fn file(mut self, mut config_file: ConfigFile<Format>) -> Self {
-        config_file.path = self.dir_path(&config_file.path);
+        config_file.path = self.child_path(&config_file.path);
         self.configs.insert(self.config_name(&config_file.path), Config::File(config_file));
         self
     }
 
     pub fn dir(mut self, mut config_dir: ConfigDirectory<Format>) -> Self {
-        config_dir.path = self.dir_path(&config_dir.path);
+        config_dir.path = self.child_path(&config_dir.path);
         self.configs.insert(self.config_name(&config_dir.path), Config::Directory(config_dir));
         self
     }
@@ -92,14 +93,6 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         }
 
         false
-    }
-
-    /// Ensures that directory exists in fs
-    fn ensure(&self) -> Result<(), Error> {
-        if !self.path.is_dir() {
-            fs::create_dir(&self.path)?;
-        }
-        Ok(())
     }
 
     fn children(&self) -> Vec<String> {
@@ -133,7 +126,7 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
             for entry in fs::read_dir(&self.path)? {
                 let entry: fs::DirEntry = entry?;
                 let config_name: String = entry.file_name().into_string().unwrap();
-                let config_path: Box<Path> = self.dir_path(Path::new(&config_name));
+                let config_path: Box<Path> = self.child_path(Path::new(&config_name));
 
                 if !self.has_config(&config_path) {
                     let file_type: fs::FileType = entry.file_type()?;
@@ -191,7 +184,7 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
     }
 
     pub fn write(mut self) -> Result<Self, Error> {
-        self.ensure()?;
+        config::ensure(&self.path)?;
     //  ^^^^^^^^^^^^^^^ Calling write on a ConfigFile already ensures the directory exists.
     //                  However, if we call write on an empty ConfigDirectory,
     //                  we still want the directory to made
@@ -206,7 +199,7 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
                 if self.options.recursive {
                     true
                 } else {
-                    config_dir.ensure()?;
+                    config::ensure(&config_dir.path)?;
                 //  ^^^^^^^^^^^^^^^^^^^^^ If we're not going to write directory contents,
                 //                        we still want the directory to be made
                     false
@@ -241,6 +234,7 @@ mod tests {
 
     use super::*;
     use crate::test::test_path::TestPath;
+    use crate::test::child_path::ChildPath;
     use crate::config_file::ConfigFile;
     use crate::formats::string_format::StringFormat;
 
@@ -253,6 +247,19 @@ mod tests {
     fn insert_file() {
         ConfigDirectory::new(Path::new("test"), StringFormat::new())
             .file(ConfigFile::new(Path::new("test.txt"), StringFormat::new()));
+    }
+
+    #[test]
+    fn ensure_parent() {
+        let tp: TestPath = TestPath::new();
+        let p1: &Path = &tp.path;
+        let p2: &Path = &tp.child_path("test");
+
+        ConfigDirectory::new(p2, StringFormat::new())
+            .write()
+            .unwrap();
+        
+        assert!(p1.is_dir());
     }
 
 }

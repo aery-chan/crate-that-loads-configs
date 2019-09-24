@@ -3,6 +3,9 @@ use std::sync::Mutex;
 use std::path::{ Path, PathBuf };
 use std::collections::HashSet;
 
+use crate::test::child_path;
+use child_path::ChildPath;
+
 lazy_static! {
     static ref ID: Mutex<u32> = Mutex::new(0);
     static ref DIR: Mutex<HashSet<u32>> = Mutex::new(HashSet::new());
@@ -57,6 +60,14 @@ impl TestPath {
 
 }
 
+impl ChildPath for TestPath {
+
+    fn child_path(&self, config_name: &str) -> Box<Path> {
+        child_path::child_path(&self.path, config_name)
+    }
+
+}
+
 impl Drop for TestPath {
 
     fn drop(&mut self) {
@@ -66,7 +77,7 @@ impl Drop for TestPath {
 
         // Remove the test directiory if we were the last to use it
         if dir.is_empty() {
-            fs::remove_dir(&self.dir_path).unwrap()
+            fs::remove_dir_all(&self.dir_path).unwrap()
         }
     }
 
