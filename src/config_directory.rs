@@ -179,6 +179,10 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
                 self.configs.insert(key, reinsert_config);
             }
         }
+
+        if self.defaulted && self.options.write_if_defaulted {
+            self = self.write()?;
+        }
         
         Ok(self)
     }
@@ -187,7 +191,7 @@ impl<Format: format::Format + Sized + Clone> ConfigDirectory<Format> {
         config::ensure(&self.path)?;
     //  ^^^^^^^^^^^^^^^ Calling write on a ConfigFile already ensures the directory exists.
     //                  However, if we call write on an empty ConfigDirectory,
-    //                  we still want the directory to made
+    //                  we still want the directory to be made
 
         for key in self.children() {
             // We should only write directory contents if recursive is enabled.
