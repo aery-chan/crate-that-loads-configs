@@ -119,7 +119,7 @@ mod tests {
         f.write(&s);
         c = c.read().unwrap();
 
-        assert_eq!(c.content.unwrap().as_str(), s);
+        assert_eq!(c.content.unwrap(), s);
     }
 
     #[test]

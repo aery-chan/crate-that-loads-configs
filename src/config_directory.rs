@@ -254,6 +254,12 @@ mod tests {
     }
 
     #[test]
+    fn insert_dir() {
+        ConfigDirectory::new(Path::new("test"), StringFormat::new())
+            .dir(ConfigDirectory::new(Path::new("test"), StringFormat::new()));
+    }
+
+    #[test]
     fn ensure_parent() {
         let tp: TestPath = TestPath::new();
         let p1: &Path = &tp.path;
